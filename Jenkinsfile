@@ -45,7 +45,6 @@ pipeline {
                     sonarsource/sonar-scanner-cli \
                     -Dsonar.projectKey=student-grade-tracker \
                     -Dsonar.sources=src \
-                    -Dsonar.tests=tests \
                     -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
                     -Dsonar.host.url=http://172.17.0.3:9000 \
                     -Dsonar.token=sqa_5e365bb149dee0eeb70f0dd2765ea3c147971f68
