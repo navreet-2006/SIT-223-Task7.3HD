@@ -38,17 +38,18 @@ pipeline {
             steps {
                 echo 'Running SonarQube code quality analysis...'
                 sh '''
-                    docker run --rm \
-                    --network host \
-                    -v "$(pwd):/usr/src" \
-                    -w /usr/src \
-                    sonarsource/sonar-scanner-cli \
-                    -Dsonar.projectKey=student-grade-tracker \
-                    -Dsonar.sources=src \
-                    -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
-                    -Dsonar.host.url=http://172.17.0.3:9000 \
-                    -Dsonar.token=sqa_5e365bb149dee0eeb70f0dd2765ea3c147971f68
-                '''
+                docker run --rm \
+                --network host \
+                -v "$(pwd):/usr/src" \
+                -w /usr/src \
+                sonarsource/sonar-scanner-cli \
+                -Dsonar.projectKey=student-grade-tracker \
+                -Dsonar.sources=. \
+                -Dsonar.exclusions=**/node_modules/**,**/coverage/**,**/tests/** \
+                -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+                -Dsonar.host.url=http://172.17.0.3:9000 \
+                -Dsonar.token=sqa_5e365bb149dee0eeb70f0dd2765ea3c147971f68
+            '''
             }
         }
 
