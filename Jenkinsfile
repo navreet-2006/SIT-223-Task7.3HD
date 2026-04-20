@@ -47,7 +47,7 @@ pipeline {
                     -Dsonar.sources=src \
                     -Dsonar.tests=tests \
                     -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
-                    -Dsonar.host.url=http://sonarqube:9000 \
+                    -Dsonar.host.url=http://172.17.0.3:9000 \
                     -Dsonar.login=admin \
                     -Dsonar.password=admin123
                 '''
