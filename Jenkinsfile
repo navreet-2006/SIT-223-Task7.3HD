@@ -103,7 +103,6 @@ pipeline {
                     docker run -d \
                     --name grade-tracker-prometheus \
                     -p 9090:9090 \
-                    -v $(pwd)/metrics-config.yml:/etc/prometheus/prometheus.yml \
                     prom/prometheus:latest
                 '''
                 sh '''
