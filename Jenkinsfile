@@ -112,8 +112,8 @@ pipeline {
                     -e GF_SECURITY_ADMIN_PASSWORD=admin123 \
                     grafana/grafana:latest
                 '''
-                sh 'sleep 10'
-                sh 'curl -f http://localhost:9090/-/healthy || exit 1'
+                sh 'sleep 15'
+                sh 'docker exec grade-tracker-prometheus wget -qO- http://localhost:9090/-/healthy || exit 1'
                 echo 'Prometheus is UP at http://localhost:9090'
                 echo 'Grafana is UP at http://localhost:3002'
             }
