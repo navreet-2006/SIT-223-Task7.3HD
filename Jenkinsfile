@@ -38,18 +38,18 @@ pipeline {
             steps {
                 echo 'Running SonarQube code quality analysis...'
                 sh '''
-                docker run --rm \
-                --network host \
-                -v "$(pwd):/usr/src" \
-                -w /usr/src \
-                sonarsource/sonar-scanner-cli \
-                -Dsonar.projectKey=student-grade-tracker \
-                -Dsonar.sources=. \
-                -Dsonar.exclusions=**/node_modules/**,**/coverage/**,**/tests/** \
-                -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
-                -Dsonar.host.url=http://172.17.0.3:9000 \
-                -Dsonar.token=sqa_5e365bb149dee0eeb70f0dd2765ea3c147971f68
-            '''
+                    docker run --rm \
+                    --network host \
+                    -v "$(pwd):/usr/src" \
+                    -w /usr/src \
+                    sonarsource/sonar-scanner-cli \
+                    -Dsonar.projectKey=student-grade-tracker \
+                    -Dsonar.sources=. \
+                    -Dsonar.exclusions=**/node_modules/**,**/coverage/**,**/tests/** \
+                    -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+                    -Dsonar.host.url=http://172.17.0.3:9000 \
+                    -Dsonar.token=sqa_5e365bb149dee0eeb70f0dd2765ea3c147971f68
+                '''
             }
         }
 
@@ -71,12 +71,18 @@ pipeline {
         stage('Deploy to Staging') {
             steps {
                 echo 'Deploying to staging environment...'
-                sh 'docker compose -f docker-compose.staging.yml down || true'
-                sh "IMAGE_TAG=${IMAGE_TAG} docker compose -f docker-compose.staging.yml up -d"
-                echo "App deployed to staging on port ${STAGING_PORT}"
-                sh 'sleep 10'
-                sh 'curl -f http://localhost:3001/health || exit 1'
-                echo 'Staging health check passed!'
+                sh 'docker rm -f grade-tracker-staging || true'
+                sh """
+                    docker run -d \
+                    --name grade-tracker-staging \
+                    -p 3001:3000 \
+                    -e PORT=3000 \
+                    -e NODE_ENV=staging \
+                    ${IMAGE_NAME}:${IMAGE_TAG}
+                """
+                sh 'sleep 5'
+                sh 'docker exec grade-tracker-staging wget -qO- http://localhost:3000/health || exit 1'
+                echo 'Staging deployment successful!'
             }
         }
 
@@ -92,12 +98,25 @@ pipeline {
         stage('Monitoring') {
             steps {
                 echo 'Starting monitoring stack...'
-                sh 'docker compose up -d prometheus grafana'
+                sh 'docker rm -f grade-tracker-prometheus grade-tracker-grafana || true'
+                sh '''
+                    docker run -d \
+                    --name grade-tracker-prometheus \
+                    -p 9090:9090 \
+                    -v $(pwd)/metrics-config.yml:/etc/prometheus/prometheus.yml \
+                    prom/prometheus:latest
+                '''
+                sh '''
+                    docker run -d \
+                    --name grade-tracker-grafana \
+                    -p 3002:3000 \
+                    -e GF_SECURITY_ADMIN_PASSWORD=admin123 \
+                    grafana/grafana:latest
+                '''
                 sh 'sleep 10'
                 sh 'curl -f http://localhost:9090/-/healthy || exit 1'
-                echo 'Prometheus is UP!'
-                echo 'Grafana is available at http://localhost:3001'
-                echo 'Monitoring stack is running!'
+                echo 'Prometheus is UP at http://localhost:9090'
+                echo 'Grafana is UP at http://localhost:3002'
             }
         }
     }
@@ -106,7 +125,9 @@ pipeline {
         success {
             echo 'Pipeline completed successfully!'
             echo "Application is live at http://localhost:3000"
+            echo "Staging at http://localhost:3001"
             echo "Monitoring at http://localhost:9090"
+            echo "Grafana at http://localhost:3002"
         }
         failure {
             echo 'Pipeline failed! Check the logs above.'
